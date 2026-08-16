@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Grid</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+    <h1>Memory Grid</h1>
+    <p class="sub">光ったマスの位置を覚えて、同じ位置をクリックしてください。</p>
+
+    <div class="layout">
+        <section class="panel settings">
+            <h2>設定</h2>
+
+            <label class="field">
+                <span>覚え時間: <b id="memorizeValue">3.0</b> 秒</span>
+                <input type="range" id="memorizeRange" min="500" max="10000" step="100" value="3000">
+            </label>
+
+            <label class="field">
+                <span>入力時間: <b id="inputValue">10.0</b> 秒</span>
+                <input type="range" id="inputRange" min="1000" max="20000" step="100" value="10000">
+            </label>
+
+            <label class="field">
+                <span>点灯箇所: <b id="litValue">5</b></span>
+                <input type="range" id="litRange" min="1" max="20" step="1" value="5">
+            </label>
+
+            <label class="field">
+                <span>マス数: <b id="sizeValue">7</b> × <span id="sizeValue2">7</span></span>
+                <input type="range" id="sizeRange" min="3" max="10" step="1" value="7">
+            </label>
+
+            <button class="start-btn" id="startBtn">開始する</button>
+
+            <div class="stats">
+                <div><span>試行</span><b id="statAttempts">0</b></div>
+                <div><span>クリア</span><b id="statClears">0</b></div>
+                <div><span>クリア率</span><b id="statRate">-</b></div>
+                <div><span>連続成功</span><b id="statStreak">0</b></div>
+            </div>
+        </section>
+
+        <section class="panel game-area">
+            <div class="board-wrap">
+                <div class="phase-label" id="phaseLabel">「開始する」を押してください</div>
+                <div class="timer-bar" id="timerBarWrap">
+                    <div class="timer-bar-inner" id="timerBar"></div>
+                </div>
+                <div class="board" id="board"></div>
+                <div class="result-message" id="resultMessage"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
