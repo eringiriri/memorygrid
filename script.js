@@ -23,7 +23,19 @@ const statRate = el('statRate');
 const statStreak = el('statStreak');
 
 const STATS_KEY = 'memoryGridStats';
-const stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{"attempts":0,"clears":0,"streak":0}');
+
+function loadStats() {
+    try {
+        const raw = JSON.parse(localStorage.getItem(STATS_KEY));
+        if (!raw || typeof raw !== 'object') throw new Error('invalid');
+        const num = (v) => (Number.isFinite(v) && v >= 0 ? v : 0);
+        return { attempts: num(raw.attempts), clears: num(raw.clears), streak: num(raw.streak) };
+    } catch {
+        return { attempts: 0, clears: 0, streak: 0 };
+    }
+}
+
+const stats = loadStats();
 
 let phase = 'idle'; // idle | memorize | input | result
 let gridSize = 7;
@@ -49,17 +61,35 @@ function saveResult(won) {
     } else {
         stats.streak = 0;
     }
-    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    try {
+        localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    } catch {
+        // storage unavailable/full - continue with in-memory stats only
+    }
     renderStats();
 }
 
 memorizeRange.addEventListener('input', () => { memorizeValue.textContent = (memorizeRange.value / 1000).toFixed(1); });
 inputRange.addEventListener('input', () => { inputValue.textContent = (inputRange.value / 1000).toFixed(1); });
 litRange.addEventListener('input', () => { litValue.textContent = litRange.value; });
+
+function syncLitRangeMax() {
+    const size = Number(sizeRange.value);
+    const maxLit = size * size - 1;
+    litRange.max = maxLit;
+    if (Number(litRange.value) > maxLit) {
+        litRange.value = maxLit;
+    }
+    litValue.textContent = litRange.value;
+}
+
 sizeRange.addEventListener('input', () => {
     sizeValue.textContent = sizeRange.value;
     sizeValue2.textContent = sizeRange.value;
+    syncLitRangeMax();
 });
+
+syncLitRangeMax();
 
 function pickRandomCells(size, count) {
     const total = size * size;
@@ -71,8 +101,15 @@ function pickRandomCells(size, count) {
     return new Set(indices.slice(0, count));
 }
 
+function computeCellSize() {
+    const gap = 6;
+    const containerWidth = board.parentElement ? board.parentElement.clientWidth : 420;
+    const usable = Math.max(160, containerWidth - 40);
+    return Math.max(20, Math.min(56, Math.floor((usable - gap * (gridSize - 1)) / gridSize)));
+}
+
 function renderBoard() {
-    const cellSize = Math.max(28, Math.min(56, Math.floor(420 / gridSize)));
+    const cellSize = computeCellSize();
     board.style.setProperty('--cell-size', cellSize + 'px');
     board.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size, 48px))`;
     board.innerHTML = '';
@@ -94,6 +131,10 @@ function renderBoard() {
 
 function onCellClick(index) {
     if (phase !== 'input') return;
+    if (performance.now() >= phaseDeadline) {
+        finishInput(true);
+        return;
+    }
     if (selectedCells.has(index)) {
         selectedCells.delete(index);
     } else if (selectedCells.size < litCount) {
@@ -171,5 +212,13 @@ function finishInput(timedOut) {
 }
 
 startBtn.addEventListener('click', startGame);
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (board.children.length > 0) renderBoard();
+    }, 150);
+});
 
 renderStats();
